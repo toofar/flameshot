@@ -13,7 +13,8 @@
 CaptureRequest::CaptureRequest(CaptureRequest::CaptureMode mode,
                                const uint delay,
                                QVariant data,
-                               CaptureRequest::ExportTask tasks)
+                               CaptureRequest::ExportTask tasks,
+                               QScreen* captureScreen)
   : m_mode(mode)
   , m_delay(delay)
   , m_tasks(tasks)
@@ -25,6 +26,7 @@ CaptureRequest::CaptureRequest(CaptureRequest::CaptureMode mode,
         config.saveLastRegion()) {
         setInitialSelection(getLastRegion());
     }
+    m_initialScreen = captureScreen;
 }
 
 CaptureRequest::CaptureMode CaptureRequest::captureMode() const
@@ -55,6 +57,16 @@ CaptureRequest::ExportTask CaptureRequest::tasks() const
 QRect CaptureRequest::initialSelection() const
 {
     return m_initialSelection;
+}
+
+void CaptureRequest::setInitialCaptureScreen(QScreen* captureScreen)
+{
+    m_initialScreen = captureScreen;
+}
+
+QScreen* CaptureRequest::initialCaptureScreen() const
+{
+    return m_initialScreen;
 }
 
 void CaptureRequest::addTask(CaptureRequest::ExportTask task)

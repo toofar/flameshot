@@ -104,14 +104,23 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
     m_contrastUiColor = m_config.contrastUiColor();
     setMouseTracking(true);
     initContext(fullScreen, req);
-#if (defined(Q_OS_WIN) || defined(Q_OS_MACOS))
     // Top left of the whole set of screens
     QPoint topLeft(0, 0);
-#endif
     if (fullScreen) {
         // Grab Screenshot
         bool ok = true;
-        m_context.screenshot = ScreenGrabber().grabEntireDesktop(ok);
+        QScreen* selectedScreen = req.initialCaptureScreen();
+        if (selectedScreen != nullptr) {
+            // Set the screenshot area, and gui window, to be over just one
+            // screen.
+            // TODO: refactor this widget to make it so passing
+            // fullscreen=false isn't required to do anything.
+            topLeft = selectedScreen->geometry().topLeft();
+            m_context.screenshot =
+              ScreenGrabber().grabScreen(selectedScreen, ok);
+        } else {
+            m_context.screenshot = ScreenGrabber().grabEntireDesktop(ok);
+        }
         if (!ok) {
             AbstractLogger::error() << tr("Unable to capture screen");
             this->close();
@@ -154,6 +163,7 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
 #if !defined(FLAMESHOT_DEBUG_CAPTURE)
         setWindowFlags(Qt::BypassWindowManagerHint | Qt::WindowStaysOnTopHint |
                        Qt::FramelessWindowHint | Qt::Tool);
+        move(topLeft);
         resize(pixmap().size());
 #endif
 #endif

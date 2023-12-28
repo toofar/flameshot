@@ -4,6 +4,7 @@
 #pragma once
 
 #include <QPixmap>
+#include <QScreen>
 #include <QString>
 #include <QVariant>
 
@@ -32,7 +33,8 @@ public:
     CaptureRequest(CaptureMode mode,
                    const uint delay = 0,
                    QVariant data = QVariant(),
-                   ExportTask tasks = NO_TASK);
+                   ExportTask tasks = NO_TASK,
+                   QScreen* captureScreen = nullptr);
 
     void setStaticID(uint id);
 
@@ -43,12 +45,14 @@ public:
     CaptureMode captureMode() const;
     ExportTask tasks() const;
     QRect initialSelection() const;
+    QScreen* initialCaptureScreen() const;
 
     void addTask(ExportTask task);
     void removeTask(ExportTask task);
     void addSaveTask(const QString& path = QString());
     void addPinTask(const QRect& pinWindowGeometry);
     void setInitialSelection(const QRect& selection);
+    void setInitialCaptureScreen(QScreen* captureScreen);
 
 private:
     CaptureMode m_mode;
@@ -57,6 +61,7 @@ private:
     ExportTask m_tasks;
     QVariant m_data;
     QRect m_pinWindowGeometry, m_initialSelection;
+    QScreen* m_initialScreen;
 
     CaptureRequest() {}
 };

@@ -281,6 +281,7 @@ void FlameshotDaemon::editPin(PinWidget& existing)
 {
     CaptureRequest req(CaptureRequest::GRAPHICAL_MODE);
     req.addTask(CaptureRequest::PIN);
+    req.setInitialCaptureScreen(existing.screen());
     QRect contentsRect =
       existing.geometry() - existing.layout()->contentsMargins();
     req.setInitialSelection(contentsRect);
