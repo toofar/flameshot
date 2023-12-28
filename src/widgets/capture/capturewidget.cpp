@@ -266,6 +266,9 @@ void CaptureWidget::positionWindow(const CaptureRequest& req)
         // TODO: verify initial selection is within this screen
         // TODO: make the windows case not override this
         topLeft = selectedScreen->geometry().topLeft();
+        AbstractLogger::error() << "window top left: x="
+          << QStringLiteral("%1").arg(topLeft.x())
+          << " y=" << QStringLiteral("%1").arg(topLeft.y());
     }
 #if defined(Q_OS_WIN)
     for (QScreen* const screen : QGuiApplication::screens()) {
@@ -289,7 +292,12 @@ QVector<QRect> CaptureWidget::initButtonAreas()
     QVector<QRect> areas;
     QPoint topLeftOffset = QPoint(0, 0);
 #if defined(Q_OS_WIN)
+    // TODO: confirm this updates right away, it used to be set from a
+    // variable that had been moved to positionWindow()
     topLeftOffset = geometry().topLeft();
+    AbstractLogger::error() << "buttons top left: x="
+      << QStringLiteral("%1").arg(topLeftOffset.x())
+      << " y=" << QStringLiteral("%1").arg(topLeftOffset.y());
 #endif
 
 #if defined(Q_OS_MACOS)
