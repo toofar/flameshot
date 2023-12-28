@@ -59,12 +59,12 @@ PinWidget::PinWidget(const QPixmap& pixmap,
     new QShortcut(Qt::Key_Escape, this, SLOT(close()));
 
     qreal devicePixelRatio = 1;
-#if defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
+//#if defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
     QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
     if (currentScreen != nullptr) {
         devicePixelRatio = currentScreen->devicePixelRatio();
     }
-#endif
+//#endif
     const int margin =
       static_cast<int>(static_cast<double>(MARGIN) * devicePixelRatio);
     QRect adjusted_pos = geometry + QMargins(margin, margin, margin, margin);
@@ -73,7 +73,7 @@ PinWidget::PinWidget(const QPixmap& pixmap,
     setWindowFlags(Qt::X11BypassWindowManagerHint);
 #endif
 
-#if defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
+//#if defined(Q_OS_MACOS) || defined(Q_OS_LINUX)
     if (currentScreen != nullptr) {
         QPoint topLeft = currentScreen->geometry().topLeft();
         adjusted_pos.setX((adjusted_pos.x() - topLeft.x()) / devicePixelRatio +
@@ -86,7 +86,7 @@ PinWidget::PinWidget(const QPixmap& pixmap,
         resize(0, 0);
         move(adjusted_pos.x(), adjusted_pos.y());
     }
-#endif
+//#endif
     grabGesture(Qt::PinchGesture);
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
