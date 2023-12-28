@@ -634,16 +634,18 @@ void CaptureWidget::paintEvent(QPaintEvent* paintEvent)
         QFontMetrics fm = painter.fontMetrics();
 
         QRect final_geometry(m_context.selection);
-        final_geometry.setTopLeft(final_geometry.topLeft() + m_context.widgetOffset);
-        QString xy = QString("s:%1x%2+%3+%4\nf:%5x%6+%7+%8\nc:%9x%10+%11+%12")
-                       .arg(static_cast<int>(selection.width() * scale))
-                       .arg(static_cast<int>(selection.height() * scale))
-                       .arg(static_cast<int>(selection.left() * scale))
-                       .arg(static_cast<int>(selection.top() * scale))
+        //final_geometry.setTopLeft(final_geometry.topLeft() + m_context.widgetOffset);
+        QString xy = QString("f:%1x%2+%3+%4\no:%5x%6")
                        .arg(static_cast<int>(final_geometry.width() * scale))
                        .arg(static_cast<int>(final_geometry.height() * scale))
                        .arg(static_cast<int>(final_geometry.left() * scale))
                        .arg(static_cast<int>(final_geometry.top() * scale))
+                       .arg(static_cast<int>(m_context.widgetOffset.x() * scale))
+                       .arg(static_cast<int>(m_context.widgetOffset.y() * scale))
+                       .arg(static_cast<int>(selection.width() * scale))
+                       .arg(static_cast<int>(selection.height() * scale))
+                       .arg(static_cast<int>(selection.left() * scale))
+                       .arg(static_cast<int>(selection.top() * scale))
                        .arg(static_cast<int>(m_context.selection.width() * scale))
                        .arg(static_cast<int>(m_context.selection.height() * scale))
                        .arg(static_cast<int>(m_context.selection.left() * scale))
