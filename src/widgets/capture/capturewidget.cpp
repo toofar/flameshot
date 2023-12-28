@@ -275,19 +275,20 @@ void CaptureWidget::positionWindow(const CaptureRequest& req)
         AbstractLogger::error() << "window top left: x="
           << QStringLiteral("%1").arg(topLeft.x())
           << " y=" << QStringLiteral("%1").arg(topLeft.y());
-    }
 #if defined(Q_OS_WIN)
-    for (QScreen* const screen : QGuiApplication::screens()) {
-        QPoint topLeftScreen = screen->geometry().topLeft();
+    } else {
+        for (QScreen* const screen : QGuiApplication::screens()) {
+            QPoint topLeftScreen = screen->geometry().topLeft();
 
-        if (topLeftScreen.x() < topLeft.x()) {
-            topLeft.setX(topLeftScreen.x());
+            if (topLeftScreen.x() < topLeft.x()) {
+                topLeft.setX(topLeftScreen.x());
+            }
+            if (topLeftScreen.y() < topLeft.y()) {
+                topLeft.setY(topLeftScreen.y());
+            }
         }
-        if (topLeftScreen.y() < topLeft.y()) {
-            topLeft.setY(topLeftScreen.y());
-        }
-    }
 #endif // defined(Q_OS_WIN)
+    }
     move(topLeft);
     resize(pixmap().size());
 #endif
@@ -467,6 +468,23 @@ void CaptureWidget::showxywh()
 void CaptureWidget::initHelpMessage()
 {
     QList<QPair<QString, QString>> keyMap;
+    auto req = m_context.request;
+    if (req.initialCaptureScreen() != nullptr) {
+        auto topLeft = req.initialCaptureScreen()->geometry().topLeft();
+        keyMap << QPair("Selected Screen Top Left", QStringLiteral("%1x%2").arg(topLeft.x()).arg(topLeft.y()));
+        for (QScreen* const screen : QGuiApplication::screens()) {
+            QPoint topLeftScreen = screen->geometry().topLeft();
+            keyMap << QPair("Some Screen Top Left", QStringLiteral("%1x%2").arg(topLeftScreen.x()).arg(topLeftScreen.y()));
+
+            if (topLeftScreen.x() < topLeft.x()) {
+                topLeft.setX(topLeftScreen.x());
+            }
+            if (topLeftScreen.y() < topLeft.y()) {
+                topLeft.setY(topLeftScreen.y());
+            }
+        }
+        keyMap << QPair("Final Top Left", QStringLiteral("%1x%2").arg(topLeft.x()).arg(topLeft.y()));
+    }
     keyMap << QPair(tr("Mouse"), tr("Select screenshot area"));
     using CT = CaptureTool;
     for (auto toolType : { CT::TYPE_ACCEPT, CT::TYPE_SAVE, CT::TYPE_COPY }) {
