@@ -53,7 +53,6 @@
 // enableSaveWindow
 
 CaptureWidget::CaptureWidget(const CaptureRequest& req,
-                             bool fullScreen,
                              QWidget* parent)
   : QWidget(parent)
   , m_toolSizeByKeyboard(0)
@@ -103,19 +102,15 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
     m_uiColor = m_config.uiColor();
     m_contrastUiColor = m_config.contrastUiColor();
     setMouseTracking(true);
-    initContext(fullScreen, req);
-    if (fullScreen) {
-        // Grab Screenshot
-        if (!initInitialScreenshot(req)) {
-            AbstractLogger::error() << tr("Unable to capture screen");
-            this->close();
-        }
+    initContext(req);
 
-        initWindowFlags();
-
-        positionWindow(req);
+    if (!initInitialScreenshot(req)) {
+        AbstractLogger::error() << tr("Unable to capture screen");
+        this->close();
     }
 
+    initWindowFlags();
+    positionWindow(req);
     initButtons();
     initSelection(); // button handler must be initialized before
     initShortcuts(); // must be called after initSelection
@@ -263,6 +258,12 @@ void CaptureWidget::initWindowFlags()
  */
 void CaptureWidget::positionWindow(const CaptureRequest& req)
 {
+#if defined(Q_OS_MACOS)
+    QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
+    move(currentScreen->geometry().x(), currentScreen->geometry().y());
+    resize(currentScreen->size());
+#else // Q_OS_WIN || Q_OS_LINUX || Q_OS_UNIX
+
     // Top left of the whole set of screens
     QPoint topLeft(0, 0);
     QScreen* selectedScreen = req.initialCaptureScreen();
@@ -283,13 +284,7 @@ void CaptureWidget::positionWindow(const CaptureRequest& req)
             topLeft.setY(topLeftScreen.y());
         }
     }
-    move(topLeft);
-    resize(pixmap().size());
-#elif defined(Q_OS_MACOS)
-    QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
-    move(currentScreen->geometry().x(), currentScreen->geometry().y());
-    resize(currentScreen->size());
-#else
+#endif // defined(Q_OS_WIN)
     move(topLeft);
     resize(pixmap().size());
 #endif
@@ -298,35 +293,31 @@ void CaptureWidget::positionWindow(const CaptureRequest& req)
 QVector<QRect> CaptureWidget::initButtonAreas()
 {
     QVector<QRect> areas;
-    if (m_context.fullscreen) {
-        QPoint topLeftOffset = QPoint(0, 0);
+    QPoint topLeftOffset = QPoint(0, 0);
 #if defined(Q_OS_WIN)
-        topLeftOffset = geometry().topLeft();
+    topLeftOffset = geometry().topLeft();
 #endif
 
 #if defined(Q_OS_MACOS)
-        // MacOS works just with one active display, so we need to append
-        // just one current display and keep multiple displays logic for
-        // other OS
-        QRect r;
-        QScreen* screen = QGuiAppCurrentScreen().currentScreen();
-        r = screen->geometry();
-        // all calculations are processed according to (0, 0) start
-        // point so we need to move current object to (0, 0)
-        r.moveTo(0, 0);
-        areas.append(r);
+    // MacOS works just with one active display, so we need to append
+    // just one current display and keep multiple displays logic for
+    // other OS
+    QRect r;
+    QScreen* screen = QGuiAppCurrentScreen().currentScreen();
+    r = screen->geometry();
+    // all calculations are processed according to (0, 0) start
+    // point so we need to move current object to (0, 0)
+    r.moveTo(0, 0);
+    areas.append(r);
 #else
-        for (QScreen* const screen : QGuiApplication::screens()) {
-            QRect r = screen->geometry();
-            r.moveTo(r.x() / screen->devicePixelRatio(),
-                     r.y() / screen->devicePixelRatio());
-            r.moveTo(r.topLeft() - topLeftOffset);
-            areas.append(r);
-        }
-#endif
-    } else {
-        areas.append(rect());
+    for (QScreen* const screen : QGuiApplication::screens()) {
+        QRect r = screen->geometry();
+        r.moveTo(r.x() / screen->devicePixelRatio(),
+                 r.y() / screen->devicePixelRatio());
+        r.moveTo(r.topLeft() - topLeftOffset);
+        areas.append(r);
     }
+#endif
     return areas;
 }
 
@@ -1075,10 +1066,8 @@ void CaptureWidget::resizeEvent(QResizeEvent* e)
 {
     QWidget::resizeEvent(e);
     m_context.widgetOffset = mapToGlobal(QPoint(0, 0));
-    if (!m_context.fullscreen) {
-        m_panel->setFixedHeight(height());
-        m_buttonHandler->updateScreenRegions(rect());
-    }
+    m_panel->setFixedHeight(height());
+    m_buttonHandler->updateScreenRegions(rect());
 }
 
 void CaptureWidget::moveEvent(QMoveEvent* e)
@@ -1097,13 +1086,12 @@ void CaptureWidget::changeEvent(QEvent* e)
     }
 }
 
-void CaptureWidget::initContext(bool fullscreen, const CaptureRequest& req)
+void CaptureWidget::initContext(const CaptureRequest& req)
 {
     m_context.color = m_config.drawColor();
     m_context.widgetOffset = mapToGlobal(QPoint(0, 0));
     m_context.mousePos = mapFromGlobal(QCursor::pos());
     m_context.toolSize = m_config.drawThickness();
-    m_context.fullscreen = fullscreen;
 
     // initialize m_context.request
     m_context.request = req;
@@ -1112,21 +1100,19 @@ void CaptureWidget::initContext(bool fullscreen, const CaptureRequest& req)
 void CaptureWidget::initPanel()
 {
     QRect panelRect = rect();
-    if (m_context.fullscreen) {
 #if (defined(Q_OS_MACOS) || defined(Q_OS_LINUX))
-        QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
-        panelRect = currentScreen->geometry();
-        auto devicePixelRatio = currentScreen->devicePixelRatio();
-        panelRect.moveTo(static_cast<int>(panelRect.x() / devicePixelRatio),
-                         static_cast<int>(panelRect.y() / devicePixelRatio));
+    QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
+    panelRect = currentScreen->geometry();
+    auto devicePixelRatio = currentScreen->devicePixelRatio();
+    panelRect.moveTo(static_cast<int>(panelRect.x() / devicePixelRatio),
+                     static_cast<int>(panelRect.y() / devicePixelRatio));
 #else
-        panelRect = QGuiApplication::primaryScreen()->geometry();
-        auto devicePixelRatio =
-          QGuiApplication::primaryScreen()->devicePixelRatio();
-        panelRect.moveTo(panelRect.x() / devicePixelRatio,
-                         panelRect.y() / devicePixelRatio);
+    panelRect = QGuiApplication::primaryScreen()->geometry();
+    auto devicePixelRatio =
+      QGuiApplication::primaryScreen()->devicePixelRatio();
+    panelRect.moveTo(panelRect.x() / devicePixelRatio,
+                     panelRect.y() / devicePixelRatio);
 #endif
-    }
 
     if (ConfigHandler().showSidePanelButton()) {
         auto* panelToggleButton =
