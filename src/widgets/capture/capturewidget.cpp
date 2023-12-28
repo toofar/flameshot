@@ -104,104 +104,17 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
     m_contrastUiColor = m_config.contrastUiColor();
     setMouseTracking(true);
     initContext(fullScreen, req);
-    // Top left of the whole set of screens
-    QPoint topLeft(0, 0);
     if (fullScreen) {
         // Grab Screenshot
-        bool ok = true;
-        QScreen* selectedScreen = req.initialCaptureScreen();
-        if (selectedScreen != nullptr) {
-            // Set the screenshot area, and gui window, to be over just one
-            // screen.
-            // TODO: refactor this widget to make it so passing
-            // fullscreen=false isn't required to do anything.
-            topLeft = selectedScreen->geometry().topLeft();
-            m_context.screenshot =
-              ScreenGrabber().grabScreen(selectedScreen, ok);
-        } else {
-            m_context.screenshot = ScreenGrabber().grabEntireDesktop(ok);
-        }
-        if (!ok) {
+        if (!initInitialScreenshot(req)) {
             AbstractLogger::error() << tr("Unable to capture screen");
             this->close();
         }
-        m_context.origScreenshot = m_context.screenshot;
 
-#if defined(Q_OS_WIN)
-// Call cmake with -DFLAMESHOT_DEBUG_CAPTURE=ON to enable easier debugging
-#if !defined(FLAMESHOT_DEBUG_CAPTURE)
-        setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint |
-                       Qt::SubWindow // Hides the taskbar icon
-        );
-#endif
+        initWindowFlags();
 
-        for (QScreen* const screen : QGuiApplication::screens()) {
-            QPoint topLeftScreen = screen->geometry().topLeft();
-
-            if (topLeftScreen.x() < topLeft.x()) {
-                topLeft.setX(topLeftScreen.x());
-            }
-            if (topLeftScreen.y() < topLeft.y()) {
-                topLeft.setY(topLeftScreen.y());
-            }
-        }
-        move(topLeft);
-        resize(pixmap().size());
-#elif defined(Q_OS_MACOS)
-        // Emulate fullscreen mode
-        //        setWindowFlags(Qt::WindowStaysOnTopHint |
-        //        Qt::BypassWindowManagerHint |
-        //                       Qt::FramelessWindowHint |
-        //                       Qt::NoDropShadowWindowHint | Qt::ToolTip |
-        //                       Qt::Popup
-        //                       );
-        QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
-        move(currentScreen->geometry().x(), currentScreen->geometry().y());
-        resize(currentScreen->size());
-#else
-// Call cmake with -DFLAMESHOT_DEBUG_CAPTURE=ON to enable easier debugging
-#if !defined(FLAMESHOT_DEBUG_CAPTURE)
-        setWindowFlags(Qt::BypassWindowManagerHint | Qt::WindowStaysOnTopHint |
-                       Qt::FramelessWindowHint | Qt::Tool);
-        move(topLeft);
-        resize(pixmap().size());
-#endif
-#endif
+        positionWindow(req);
     }
-    QVector<QRect> areas;
-    if (m_context.fullscreen) {
-        QPoint topLeftOffset = QPoint(0, 0);
-#if defined(Q_OS_WIN)
-        topLeftOffset = topLeft;
-#endif
-
-#if defined(Q_OS_MACOS)
-        // MacOS works just with one active display, so we need to append
-        // just one current display and keep multiple displays logic for
-        // other OS
-        QRect r;
-        QScreen* screen = QGuiAppCurrentScreen().currentScreen();
-        r = screen->geometry();
-        // all calculations are processed according to (0, 0) start
-        // point so we need to move current object to (0, 0)
-        r.moveTo(0, 0);
-        areas.append(r);
-#else
-        for (QScreen* const screen : QGuiApplication::screens()) {
-            QRect r = screen->geometry();
-            r.moveTo(r.x() / screen->devicePixelRatio(),
-                     r.y() / screen->devicePixelRatio());
-            r.moveTo(r.topLeft() - topLeftOffset);
-            areas.append(r);
-        }
-#endif
-    } else {
-        areas.append(rect());
-    }
-
-    m_buttonHandler = new ButtonHandler(this);
-    m_buttonHandler->updateScreenRegions(areas);
-    m_buttonHandler->hide();
 
     initButtons();
     initSelection(); // button handler must be initialized before
@@ -294,8 +207,129 @@ CaptureWidget::~CaptureWidget()
     }
 }
 
+/** @brief Get initial screenshot to serve as canvas for GUI window.
+ *
+ * Takes parameters from `req` and saves the pixmap from the screenshot to
+ * `m_context.screenshot` and `m_context.origScreenshot`.
+ *
+ * If `false` is returned we couldn't get a screenshot.
+ */
+bool CaptureWidget::initInitialScreenshot(const CaptureRequest& req)
+{
+    bool ok = true;
+    QScreen* selectedScreen = req.initialCaptureScreen();
+    if (selectedScreen != nullptr) {
+        // Set the screenshot area to be over just one screen.
+        m_context.screenshot =
+          ScreenGrabber().grabScreen(selectedScreen, ok);
+    } else {
+        m_context.screenshot = ScreenGrabber().grabEntireDesktop(ok);
+    }
+    m_context.origScreenshot = m_context.screenshot;
+    return ok;
+}
+
+/** @brief Set Qt flags on this window to make it fullscreen, borderless etc.
+ */
+void CaptureWidget::initWindowFlags()
+{
+#if !defined(FLAMESHOT_DEBUG_CAPTURE)
+#if defined(Q_OS_WIN)
+    setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint |
+                   Qt::SubWindow // Hides the taskbar icon
+    );
+#elif defined(Q_OS_MACOS)
+    // Emulate fullscreen mode
+    //        setWindowFlags(Qt::WindowStaysOnTopHint |
+    //        Qt::BypassWindowManagerHint |
+    //                       Qt::FramelessWindowHint |
+    //                       Qt::NoDropShadowWindowHint | Qt::ToolTip |
+    //                       Qt::Popup
+    //                       );
+#else // Q_OS_LINUX || Q_OS_UNIX
+    setWindowFlags(Qt::BypassWindowManagerHint | Qt::WindowStaysOnTopHint |
+                   Qt::FramelessWindowHint | Qt::Tool);
+#endif
+#endif // !FLAMESHOT_DEBUG_CAPTURE
+}
+
+/** @brief Set the starting size and position of this window.
+ */
+void CaptureWidget::positionWindow(const CaptureRequest& req)
+{
+    // Top left of the whole set of screens
+    QPoint topLeft(0, 0);
+    QScreen* selectedScreen = req.initialCaptureScreen();
+    if (selectedScreen != nullptr) {
+        // Set the gui window to be over just one screen.
+        // TODO: verify initial selection is within this screen
+        // TODO: make the windows case not override this
+        topLeft = selectedScreen->geometry().topLeft();
+    }
+#if defined(Q_OS_WIN)
+    for (QScreen* const screen : QGuiApplication::screens()) {
+        QPoint topLeftScreen = screen->geometry().topLeft();
+
+        if (topLeftScreen.x() < topLeft.x()) {
+            topLeft.setX(topLeftScreen.x());
+        }
+        if (topLeftScreen.y() < topLeft.y()) {
+            topLeft.setY(topLeftScreen.y());
+        }
+    }
+    move(topLeft);
+    resize(pixmap().size());
+#elif defined(Q_OS_MACOS)
+    QScreen* currentScreen = QGuiAppCurrentScreen().currentScreen();
+    move(currentScreen->geometry().x(), currentScreen->geometry().y());
+    resize(currentScreen->size());
+#else
+    move(topLeft);
+    resize(pixmap().size());
+#endif
+}
+
+QVector<QRect> CaptureWidget::initButtonAreas()
+{
+    QVector<QRect> areas;
+    if (m_context.fullscreen) {
+        QPoint topLeftOffset = QPoint(0, 0);
+#if defined(Q_OS_WIN)
+        topLeftOffset = geometry().topLeft();
+#endif
+
+#if defined(Q_OS_MACOS)
+        // MacOS works just with one active display, so we need to append
+        // just one current display and keep multiple displays logic for
+        // other OS
+        QRect r;
+        QScreen* screen = QGuiAppCurrentScreen().currentScreen();
+        r = screen->geometry();
+        // all calculations are processed according to (0, 0) start
+        // point so we need to move current object to (0, 0)
+        r.moveTo(0, 0);
+        areas.append(r);
+#else
+        for (QScreen* const screen : QGuiApplication::screens()) {
+            QRect r = screen->geometry();
+            r.moveTo(r.x() / screen->devicePixelRatio(),
+                     r.y() / screen->devicePixelRatio());
+            r.moveTo(r.topLeft() - topLeftOffset);
+            areas.append(r);
+        }
+#endif
+    } else {
+        areas.append(rect());
+    }
+    return areas;
+}
+
 void CaptureWidget::initButtons()
 {
+    m_buttonHandler = new ButtonHandler(this);
+    m_buttonHandler->updateScreenRegions(initButtonAreas());
+    m_buttonHandler->hide();
+
     auto allButtonTypes = CaptureToolButton::getIterableButtonTypes();
     auto visibleButtonTypes = m_config.buttons();
     if ((m_context.request.tasks() == CaptureRequest::NO_TASK) ||

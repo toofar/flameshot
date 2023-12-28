@@ -121,6 +121,10 @@ private:
     void initShortcuts();
     void initButtons();
     void initHelpMessage();
+    bool initInitialScreenshot(const CaptureRequest& req);
+    void initWindowFlags();
+    void positionWindow(const CaptureRequest& req);
+    QVector<QRect> initButtonAreas();
     void updateSizeIndicator();
     void updateCursor();
     void updateSelectionState();
