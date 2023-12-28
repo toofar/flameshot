@@ -628,6 +628,8 @@ void CaptureWidget::paintEvent(QPaintEvent* paintEvent)
         QRect xybox;
         QFontMetrics fm = painter.fontMetrics();
 
+        QRect final_geometry(m_context.selection);
+        final_geometry.setTopLeft(final_geometry.topLeft() + m_context.widgetOffset);
         QString xy = QString("%1x%2+%3+%4\n%5x%6+%7+%8")
                        .arg(static_cast<int>(selection.width() * scale))
                        .arg(static_cast<int>(selection.height() * scale))
@@ -637,6 +639,10 @@ void CaptureWidget::paintEvent(QPaintEvent* paintEvent)
                        .arg(static_cast<int>(m_context.selection.height() * scale))
                        .arg(static_cast<int>(m_context.selection.left() * scale))
                        .arg(static_cast<int>(m_context.selection.top() * scale))
+                       .arg(static_cast<int>(final_geometry.selection.width() * scale))
+                       .arg(static_cast<int>(final_geometry.selection.height() * scale))
+                       .arg(static_cast<int>(final_geometry.selection.left() * scale))
+                       .arg(static_cast<int>(final_geometry.selection.top() * scale))
                        ;
 
         xybox = fm.boundingRect(xy);
