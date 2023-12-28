@@ -271,7 +271,9 @@ void CaptureWidget::positionWindow(const CaptureRequest& req)
         // Set the gui window to be over just one screen.
         // TODO: verify initial selection is within this screen
         // TODO: make the windows case not override this
-        topLeft = selectedScreen->geometry().topLeft();
+        topLeft.setX(selectedScreen->geometry().topLeft().x());
+        topLeft.setY(selectedScreen->geometry().topLeft().y());
+        //topLeft = selectedScreen->geometry().topLeft();
         AbstractLogger::error() << "window top left: x="
           << QStringLiteral("%1").arg(topLeft.x())
           << " y=" << QStringLiteral("%1").arg(topLeft.y());
@@ -483,7 +485,10 @@ void CaptureWidget::initHelpMessage()
         );
         keyMap << QPair("Selected Screen Top Left", QStringLiteral("%1x%2").arg(topLeft.x()).arg(topLeft.y()));
         for (QScreen* const screen : QGuiApplication::screens()) {
-            QPoint topLeftScreen = screen->geometry().topLeft();
+            QPoint topLeftScreen(
+                screen->geometry().topLeft().x(),
+                screen->geometry().topLeft().y()
+                );
             keyMap << QPair("Some Screen Top Left", QStringLiteral("%1x%2").arg(topLeftScreen.x()).arg(topLeftScreen.y()));
 
             if (topLeftScreen.x() < topLeft.x()) {
@@ -639,10 +644,10 @@ void CaptureWidget::paintEvent(QPaintEvent* paintEvent)
                        .arg(static_cast<int>(m_context.selection.height() * scale))
                        .arg(static_cast<int>(m_context.selection.left() * scale))
                        .arg(static_cast<int>(m_context.selection.top() * scale))
-                       .arg(static_cast<int>(final_geometry.selection.width() * scale))
-                       .arg(static_cast<int>(final_geometry.selection.height() * scale))
-                       .arg(static_cast<int>(final_geometry.selection.left() * scale))
-                       .arg(static_cast<int>(final_geometry.selection.top() * scale))
+                       .arg(static_cast<int>(final_geometry.width() * scale))
+                       .arg(static_cast<int>(final_geometry.height() * scale))
+                       .arg(static_cast<int>(final_geometry.left() * scale))
+                       .arg(static_cast<int>(final_geometry.top() * scale))
                        ;
 
         xybox = fm.boundingRect(xy);
