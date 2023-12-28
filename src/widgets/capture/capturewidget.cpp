@@ -474,6 +474,13 @@ void CaptureWidget::initHelpMessage()
             req.initialCaptureScreen()->geometry().topLeft().x(),
             req.initialCaptureScreen()->geometry().topLeft().y()
             );
+        QRect initialSelection = m_context.request.initialSelection();
+        keyMap << QPair("Initial Selection", QStringLiteral("%1x%2+%3%4")
+            .arg(initialSelection.width())
+            .arg(initialSelection.height())
+            .arg(initialSelection.x())
+            .arg(initialSelection.y())
+        );
         keyMap << QPair("Selected Screen Top Left", QStringLiteral("%1x%2").arg(topLeft.x()).arg(topLeft.y()));
         for (QScreen* const screen : QGuiApplication::screens()) {
             QPoint topLeftScreen = screen->geometry().topLeft();
