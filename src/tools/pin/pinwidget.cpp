@@ -74,6 +74,7 @@ PinWidget::PinWidget(const QPixmap& pixmap,
         .arg(geometry.width())
         .arg(geometry.height())
     ;
+    debugText << QStringLiteral("pixel ratio: %1").arg(devicePixelRatio);
     debugText << QStringLiteral("margin: %1")
         .arg(margin)
     ;
