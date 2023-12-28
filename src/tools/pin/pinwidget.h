@@ -56,6 +56,7 @@ private:
     unsigned int m_rotateFactor{ 0 };
     qreal m_currentStepScaleFactor{ 1 };
     bool m_sizeChanged{ false };
+    QList<QString> debugText;
 
 private slots:
     void showContextMenu(const QPoint& pos);

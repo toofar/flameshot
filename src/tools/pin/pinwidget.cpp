@@ -68,6 +68,15 @@ PinWidget::PinWidget(const QPixmap& pixmap,
     const int margin =
       static_cast<int>(static_cast<double>(MARGIN) * devicePixelRatio);
     QRect adjusted_pos = geometry + QMargins(margin, margin, margin, margin);
+    debugText << QStringLiteral("orig geom: %1x%2+%3+%4")
+        .arg(geometry.x())
+        .arg(geometry.y())
+        .arg(geometry.width())
+        .arg(geometry.height())
+    ;
+    debugText << QStringLiteral("margin: %1")
+        .arg(margin)
+    ;
     setGeometry(adjusted_pos);
 #if defined(Q_OS_LINUX)
     setWindowFlags(Qt::X11BypassWindowManagerHint);
@@ -85,6 +94,12 @@ PinWidget::PinWidget(const QPixmap& pixmap,
         adjusted_pos.setHeight(adjusted_pos.size().height() / devicePixelRatio);
         resize(0, 0);
         move(adjusted_pos.x(), adjusted_pos.y());
+        debugText << QStringLiteral("adjusted geom: %1x%2+%3+%4")
+            .arg(adjusted_pos.x())
+            .arg(adjusted_pos.y())
+            .arg(adjusted_pos.width())
+            .arg(adjusted_pos.height())
+        ;
     }
 //#endif
     grabGesture(Qt::PinchGesture);
@@ -337,6 +352,11 @@ void PinWidget::showContextMenu(const QPoint& pos)
     connect(&closePinAction, &QAction::triggered, this, &PinWidget::closePin);
     contextMenu.addSeparator();
     contextMenu.addAction(&closePinAction);
+
+    contextMenu.addSeparator();
+    for (auto str : debugText) {
+      contextMenu.addAction(new QAction(str, this));
+    }
 
     contextMenu.exec(mapToGlobal(pos));
 }

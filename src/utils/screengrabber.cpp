@@ -180,6 +180,7 @@ QPixmap ScreenGrabber::grabEntireDesktop(bool& ok)
 #endif
 }
 
+// TODO: is this method bugged on not wayland and not windows?
 QRect ScreenGrabber::screenGeometry(QScreen* screen)
 {
     QPixmap p;
