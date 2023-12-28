@@ -272,19 +272,20 @@ void CaptureWidget::positionWindow(const CaptureRequest& req)
         // TODO: verify initial selection is within this screen
         // TODO: make the windows case not override this
         topLeft = selectedScreen->geometry().topLeft();
-    }
 #if defined(Q_OS_WIN)
-    for (QScreen* const screen : QGuiApplication::screens()) {
-        QPoint topLeftScreen = screen->geometry().topLeft();
+    } else {
+        for (QScreen* const screen : QGuiApplication::screens()) {
+            QPoint topLeftScreen = screen->geometry().topLeft();
 
-        if (topLeftScreen.x() < topLeft.x()) {
-            topLeft.setX(topLeftScreen.x());
+            if (topLeftScreen.x() < topLeft.x()) {
+                topLeft.setX(topLeftScreen.x());
+            }
+            if (topLeftScreen.y() < topLeft.y()) {
+                topLeft.setY(topLeftScreen.y());
+            }
         }
-        if (topLeftScreen.y() < topLeft.y()) {
-            topLeft.setY(topLeftScreen.y());
-        }
-    }
 #endif // defined(Q_OS_WIN)
+    }
     move(topLeft);
     resize(pixmap().size());
 #endif
