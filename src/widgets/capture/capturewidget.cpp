@@ -475,7 +475,7 @@ void CaptureWidget::initHelpMessage()
             req.initialCaptureScreen()->geometry().topLeft().y()
             );
         QRect initialSelection = m_context.request.initialSelection();
-        keyMap << QPair("Initial Selection", QStringLiteral("%1x%2+%3%4")
+        keyMap << QPair("Initial Selection", QStringLiteral("%1x%2+%3+%4")
             .arg(initialSelection.width())
             .arg(initialSelection.height())
             .arg(initialSelection.x())
@@ -628,11 +628,16 @@ void CaptureWidget::paintEvent(QPaintEvent* paintEvent)
         QRect xybox;
         QFontMetrics fm = painter.fontMetrics();
 
-        QString xy = QString("%1x%2+%3+%4")
+        QString xy = QString("%1x%2+%3+%4\n%5x%6+%7+%8")
                        .arg(static_cast<int>(selection.width() * scale))
                        .arg(static_cast<int>(selection.height() * scale))
                        .arg(static_cast<int>(selection.left() * scale))
-                       .arg(static_cast<int>(selection.top() * scale));
+                       .arg(static_cast<int>(selection.top() * scale))
+                       .arg(static_cast<int>(m_context.selection.width() * scale))
+                       .arg(static_cast<int>(m_context.selection.height() * scale))
+                       .arg(static_cast<int>(m_context.selection.left() * scale))
+                       .arg(static_cast<int>(m_context.selection.top() * scale))
+                       ;
 
         xybox = fm.boundingRect(xy);
         // the small numbers here are just margins so the text doesn't
