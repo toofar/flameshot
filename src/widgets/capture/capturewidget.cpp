@@ -470,7 +470,10 @@ void CaptureWidget::initHelpMessage()
     QList<QPair<QString, QString>> keyMap;
     auto req = m_context.request;
     if (req.initialCaptureScreen() != nullptr) {
-        auto topLeft = req.initialCaptureScreen()->geometry().topLeft();
+        QPoint topLeft(
+            req.initialCaptureScreen()->geometry().topLeft().x(),
+            req.initialCaptureScreen()->geometry().topLeft().y()
+            );
         keyMap << QPair("Selected Screen Top Left", QStringLiteral("%1x%2").arg(topLeft.x()).arg(topLeft.y()));
         for (QScreen* const screen : QGuiApplication::screens()) {
             QPoint topLeftScreen = screen->geometry().topLeft();
