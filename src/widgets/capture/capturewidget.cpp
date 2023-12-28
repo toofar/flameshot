@@ -258,8 +258,14 @@ CaptureWidget::CaptureWidget(const CaptureRequest& req,
           OverlayMessage::instance()->update();
       });
 
-    OverlayMessage::init(this,
-                         QGuiAppCurrentScreen().currentScreen()->geometry());
+    if (req.initialCaptureScreen() != nullptr) {
+        // Child widget sizing is relative to the parent, so we just need to
+        // pass it our size with no offset.
+        OverlayMessage::init(this, QRect(QPoint(), size()));
+    } else {
+        OverlayMessage::init(this,
+            QGuiAppCurrentScreen().currentScreen()->geometry());
+    }
 
     if (m_config.showHelp()) {
         initHelpMessage();
